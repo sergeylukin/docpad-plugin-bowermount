@@ -6,15 +6,23 @@ only JS components)
 
 ## Install
 
-It's not available for neat installation yet. But you can grab
-[source](https://github.com/sergeylukin/docpad-plugin-bowermount/archive/master.zip)
-and extract it into `plugins/` inside your docpad project
+Make sure you have `bower` install globally.
 
-Hopefully soon it will be available via:
+Install it from you Docpad project:
 
 ```
-docpad install bowerrequirejs
+npm install docpad-plugin-bowermount --save-dev
 ```
+
+Next time you run `docpad run` your bower components will be available via web.
+
+For example, if you installed `jquery` via `bower install jquery` and `docpad
+run` creates server accessible via `http://localhost:9778` you can
+access `jquery` lib via `http://localhost:9778:/scripts/jquery.js`
+
+With that being said, you'd probably want bundle your components into static
+files on build step or enabling this plugin on production (which is less
+likely)
 
 
 
