@@ -1,34 +1,34 @@
 {
-	"name": "docpad-plugin-bowermount",
-	"version": "2.0.0",
-	"description": "DocPad plugin that mounts bower components in web server middleware",
-	"homepage": "https://github.com/sergeylukin/docpad-plugin-bowermount",
-	"keywords": [
-		"docpad",
-		"docpad-plugin",
-		"bower"
-	],
-	"author": "Sergey Lukin <contact@sergeylukin.com> (http://sergeylukin.com)",
-	"maintainers": [
-		"Sergey Lukin <contact@sergeylukin.com> (http://github.com/sergeylukin)"
-	],
-	"contributors": [
-		"Sergey Lukin <contact@sergeylukin.com> (http://github.com/sergeylukin)"
-	],
-	"bugs": {
-		"url": "https://github.com/sergeylukin/docpad-plugin-bowermount/issues"
-	},
-	"repository" : {
-		"type": "git",
-		"url": "https://github.com/sergeylukin/docpad-plugin-bowermount.git"
-	},
-	"engines" : {
-		"node": ">=0.8",
-		"docpad": ">=6"
-	},
-	"dependencies": {},
-	"devDependencies": {
-		"underscore": "1.5.x"
-	},
-	"main": "./src/bowermount.plugin.coffee"
+  "name": "docpad-plugin-bowermount",
+  "version": "2.0.1",
+  "description": "DocPad plugin that mounts bower components in web server middleware",
+  "homepage": "https://github.com/sergeylukin/docpad-plugin-bowermount",
+  "keywords": [
+    "docpad",
+    "docpad-plugin",
+    "bower"
+  ],
+  "author": "Sergey Lukin <contact@sergeylukin.com> (http://sergeylukin.com)",
+  "maintainers": [
+    "Sergey Lukin <contact@sergeylukin.com> (http://github.com/sergeylukin)"
+  ],
+  "contributors": [
+    "Sergey Lukin <contact@sergeylukin.com> (http://github.com/sergeylukin)"
+  ],
+  "bugs": {
+    "url": "https://github.com/sergeylukin/docpad-plugin-bowermount/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sergeylukin/docpad-plugin-bowermount.git"
+  },
+  "engines": {
+    "node": ">=0.8",
+    "docpad": ">=6"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "underscore": "1.5.x"
+  },
+  "main": "./src/bowermount.plugin.coffee"
 }
