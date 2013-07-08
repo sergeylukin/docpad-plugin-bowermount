@@ -5,6 +5,7 @@ module.exports = (BasePlugin) ->
 	fs = require('fs')
 	bower = require('bower')
 	_ = require('underscore')
+	levenshtein = require('levenshtein-distance')
 
 	# Define Plugin
 	class BowerMountPlugin extends BasePlugin
@@ -72,19 +73,20 @@ module.exports = (BasePlugin) ->
 
 										console.log "Warning: Renaming " + key + " to " + newKey
 
-									# if there's no main attribute in the bower.json file, for example:
-									# "almond": "bower_components/almond/"
-									# ..then look for a top level .js file, so we want this:
-									# "almond": "bower_components/almond/almond.js"
-									# assuming almond.js exists
-									# if we don't find one continue to use the original value.
-									# if we find any Gruntfiles, remove them
 									if not _.isArray(val)
+										# If path set in bower leads to a directory
+										# try to find file in it by ourselves..
 										if fs.statSync(val).isDirectory()
-											files = fs.readdirSync val
-											main = _.filter files, (fileName) ->
+											jsfiles = _.filter fs.readdirSync(val), (fileName) ->
 												return path.extname(fileName) is ".js" && fileName != 'Gruntfile.js'
-											obj[key] = (if main.length is 1 then path.join(val, main[0]) else val)
+											# Find best match using levenshtein distance
+											# algorithm if there are many .js files
+											if jsfiles.length > 1
+												new levenshtein(jsfiles).find alias, (res) ->
+													obj[key] = path.join(val, res)
+											# Ignore component if no .js file found
+											else if jsfiles.length == 0
+												delete obj[key]
 
 								# If alias can be found in bower components - send it's
 								# contents
