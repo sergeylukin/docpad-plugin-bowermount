@@ -79,13 +79,18 @@ module.exports = (BasePlugin) ->
 										if fs.statSync(val).isDirectory()
 											jsfiles = _.filter fs.readdirSync(val), (fileName) ->
 												return path.extname(fileName) is ".js" && fileName != 'Gruntfile.js'
+
 											# Find best match using levenshtein distance
 											# algorithm if there are many .js files
 											if jsfiles.length > 1
 												new levenshtein(jsfiles).find alias, (res) ->
 													obj[key] = path.join(val, res)
+											# Assign the only one that was found
+											else if jsfiles.length == 1
+												obj[key] = path.join(val, jsfiles[0])
+
 											# Ignore component if no .js file found
-											else if jsfiles.length == 0
+											else
 												delete obj[key]
 
 								# If alias can be found in bower components - send it's
