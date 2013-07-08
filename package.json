@@ -1,6 +1,6 @@
 {
   "name": "docpad-plugin-bowermount",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "DocPad plugin that mounts bower components in web server middleware",
   "homepage": "https://github.com/sergeylukin/docpad-plugin-bowermount",
   "keywords": [
@@ -26,9 +26,10 @@
     "node": ">=0.8",
     "docpad": ">=6"
   },
-  "dependencies": {},
-  "devDependencies": {
-    "underscore": "1.5.x"
+  "dependencies": {
+    "underscore": "1.5.x",
+    "bower": "~0.10.0"
   },
+  "devDependencies": {},
   "main": "./src/bowermount.plugin.coffee"
 }
