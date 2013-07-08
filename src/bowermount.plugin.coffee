@@ -94,7 +94,7 @@ module.exports = (BasePlugin) ->
 									componentPath = path.join docpad.config.rootPath, components[alias]
 									fs.exists componentPath, (exists) ->
 										if exists
-											res.writeHead(200, {"Content-Type": "text/plain"});
+											res.writeHead(200, {"Content-Type": "text/javascript"});
 											res.write fs.readFileSync componentPath
 											res.end()
 										else

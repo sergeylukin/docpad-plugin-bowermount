@@ -12,3 +12,6 @@ v2.0.2 July 8, 2013
 v2.1.0 July 8, 2013
 - Improve the way component main file is picked (using levenshtein distance
   algorithm)
+
+v2.1.1 July 8, 2013
+- Change serving files "Content-type" to text/javascript
