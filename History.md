@@ -18,3 +18,7 @@ v2.1.1 July 8, 2013
 
 v2.1.2 July 8, 2013
 - Fix components serving that have only one single JS file in their root directory
+
+v2.2.0 July 8, 2013
+	- Rely on RequireJS paths configuration first, fallback to auto-decision
+  - Support relative, absolute, url paths

@@ -6,6 +6,33 @@ module.exports = (BasePlugin) ->
 	bower = require('bower')
 	_ = require('underscore')
 	levenshtein = require('levenshtein-distance')
+	requirejs = require('requirejs/bin/r.js')
+	request = require('request')
+
+
+	# Helper function that retrieves resource by it's path
+	serveComponent = ( componentPath, res, next ) ->
+		# Fetch URL from the network
+		if /^http/.test componentPath
+			console.log 'bowermount: fetching ' + componentPath
+			request componentPath, (err, response, body) ->
+				if !err and response.statusCode == 200
+					res.writeHead(200, {"Content-Type": "text/plain"});
+					res.write body
+					res.end()
+				else
+					next()
+
+		# Serve file from FileSystem
+		else
+			console.log 'bowermount: loading ' + componentPath
+			fs.exists componentPath, (exists) ->
+				if exists
+					res.writeHead(200, {"Content-Type": "text/plain"});
+					res.write fs.readFileSync componentPath
+					res.end()
+				else
+					next()
 
 	# Define Plugin
 	class BowerMountPlugin extends BasePlugin
@@ -22,6 +49,7 @@ module.exports = (BasePlugin) ->
 			# Specify bower component names (like `jquery`, `almond`, etc.)
 			# you don't want to be mounted
 			excludes: []
+			rjsConfig: 'scripts/main.js'
 
 		# Server Extend
 		# Used to add our own custom routes to the server before the docpad routes are added
@@ -38,6 +66,10 @@ module.exports = (BasePlugin) ->
 			{server} = opts
 			docpad = @docpad
 			config = @config
+
+			rjsConfigFilePath = path.join docpad.config.outPath, config.rjsConfig
+			if fs.existsSync rjsConfigFilePath
+				rjsConfigFile = String( fs.readFileSync String(rjsConfigFilePath) )
 
 			# Redirect Middleware
 			server.use (req,res,next) ->
@@ -96,14 +128,29 @@ module.exports = (BasePlugin) ->
 								# If alias can be found in bower components - send it's
 								# contents
 								if _.has components, alias
-									componentPath = path.join docpad.config.rootPath, components[alias]
-									fs.exists componentPath, (exists) ->
-										if exists
-											res.writeHead(200, {"Content-Type": "text/javascript"});
-											res.write fs.readFileSync componentPath
-											res.end()
-										else
-											next()
+
+									if rjsConfigFile
+										# Use path set in RequireJS config
+										requirejs.tools.useLib (require) ->
+											require("transform").modifyConfig rjsConfigFile, (config) ->
+												# Overwrite auto-fetched paths with paths specified in RequireJS
+												# configuration file
+												_.extend(components, config.paths);
+
+												# First cache path in a variable
+												componentPath = components[alias]
+
+												if config.paths[alias]
+													# Absolute path with extension
+													if /^[\/|http]/.test config.paths[alias]
+														componentPath = config.paths[alias]
+													# Relative path (to baseUrl) without extension
+													else
+														componentPath = path.join docpad.config.outPath, config.baseUrl, componentPath + '.js'
+
+												serveComponent componentPath, res, next
+									else
+										serveComponent components[alias], res, next
 
 								else
 									next()
