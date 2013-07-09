@@ -12,6 +12,10 @@ module.exports = (BasePlugin) ->
 
 	# Helper function that retrieves resource by it's path
 	serveComponent = ( componentPath, res, next ) ->
+		# append extension
+		unless /\.js$/.test componentPath
+			componentPath += '.js'
+
 		# Fetch URL from the network
 		if /^http/.test componentPath
 			console.log 'bowermount: fetching ' + componentPath
@@ -146,7 +150,7 @@ module.exports = (BasePlugin) ->
 														componentPath = config.paths[alias]
 													# Relative path (to baseUrl) without extension
 													else
-														componentPath = path.join docpad.config.outPath, config.baseUrl, componentPath + '.js'
+														componentPath = path.join docpad.config.outPath, config.baseUrl, componentPath
 
 												serveComponent componentPath, res, next
 									else
