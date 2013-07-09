@@ -21,7 +21,7 @@ module.exports = (BasePlugin) ->
 			console.log 'bowermount: fetching ' + componentPath
 			request componentPath, (err, response, body) ->
 				if !err and response.statusCode == 200
-					res.writeHead(200, {"Content-Type": "text/plain"});
+					res.writeHead(200, {"Content-Type": "text/javascript"});
 					res.write body
 					res.end()
 				else
@@ -32,7 +32,7 @@ module.exports = (BasePlugin) ->
 			console.log 'bowermount: loading ' + componentPath
 			fs.exists componentPath, (exists) ->
 				if exists
-					res.writeHead(200, {"Content-Type": "text/plain"});
+					res.writeHead(200, {"Content-Type": "text/javascript"});
 					res.write fs.readFileSync componentPath
 					res.end()
 				else

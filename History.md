@@ -25,3 +25,6 @@ v2.2.0 July 9, 2013
 
 v2.2.1 July 10, 2013
 - Fix path extension bug. Now paths are extension-agnostic
+
+v2.2.2 July 10, 2013
+- Restore Content-type back to text/javascript
