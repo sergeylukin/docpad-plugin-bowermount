@@ -28,3 +28,6 @@ v2.2.1 July 10, 2013
 
 v2.2.2 July 10, 2013
 - Restore Content-type back to text/javascript
+
+v2.2.3 July 11, 2013
+- Setup proxy that mounts resources and redirect RequireJS paths to it
