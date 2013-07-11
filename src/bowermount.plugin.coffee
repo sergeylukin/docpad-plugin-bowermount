@@ -153,7 +153,7 @@ module.exports = (BasePlugin) ->
 					# If any static existing file requested
 					if exists
 						# If any file that is not RequireJS config file
-						if filePath.indexOf(config.rjsConfig) == -1
+						if filePath != rjsConfigFilePath
 							next()
 						# If RequireJS config file requsted
 						else
@@ -233,7 +233,7 @@ module.exports = (BasePlugin) ->
 					# Catch URIs like: "/scripts/something.js"
 					# but not "/scripts/something"
 					# and not "/scripts/subdir/something.js"
-					else if /\/scripts\/[^\/]*\.js$/.test filePath
+					else if /\/scripts\/[^\/]*\.js$/.test req.url
 						# Fetch all installed bower components
 						bower.commands.list({paths: true})
 							.on 'data', (components) ->

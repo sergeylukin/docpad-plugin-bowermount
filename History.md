@@ -31,3 +31,6 @@ v2.2.2 July 10, 2013
 
 v2.2.3 July 11, 2013
 - Setup proxy that mounts resources and redirect RequireJS paths to it
+
+v2.2.4 July 11, 2013
+- Fix Windows compatibility by using safer methods when manipulating paths
