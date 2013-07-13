@@ -34,3 +34,6 @@ v2.2.3 July 11, 2013
 
 v2.2.4 July 11, 2013
 - Fix Windows compatibility by using safer methods when manipulating paths
+
+v2.2.5 July 14, 2013
+- Fix reading bower components with more than 1 main file

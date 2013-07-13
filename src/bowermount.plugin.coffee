@@ -178,25 +178,31 @@ module.exports = (BasePlugin) ->
 
 											console.log "Warning: Renaming " + key + " to " + newKey
 
-										if not _.isArray(val)
-											# If path set in bower leads to a directory
-											# try to find file in it by ourselves..
-											if fs.statSync(val).isDirectory()
-												jsfiles = _.filter fs.readdirSync(val), (fileName) ->
-													return path.extname(fileName) is ".js" && fileName != 'Gruntfile.js'
+										# Don't bother with arrays, just take the first one
+										# If it's not the one we need, it can be specified
+										# in RequireJS configuration
+										if _.isArray(val)
+											obj[key] = obj[key][0]
+											val = obj[key]
 
-												# Find best match using levenshtein distance
-												# algorithm if there are many .js files
-												if jsfiles.length > 1
-													new levenshtein(jsfiles).find alias, (res) ->
-														obj[key] = path.join(val, res)
-												# Assign the only one that was found
-												else if jsfiles.length == 1
-													obj[key] = path.join(val, jsfiles[0])
+										# If path set in bower leads to a directory
+										# try to find file in it by ourselves..
+										if fs.statSync(val).isDirectory()
+											jsfiles = _.filter fs.readdirSync(val), (fileName) ->
+												return path.extname(fileName) is ".js" && fileName != 'Gruntfile.js'
 
-												# Ignore component if no .js file found
-												else
-													delete obj[key]
+											# Find best match using levenshtein distance
+											# algorithm if there are many .js files
+											if jsfiles.length > 1
+												new levenshtein(jsfiles).find alias, (res) ->
+													obj[key] = path.join(val, res)
+											# Assign the only one that was found
+											else if jsfiles.length == 1
+												obj[key] = path.join(val, jsfiles[0])
+
+											# Ignore component if no .js file found
+											else
+												delete obj[key]
 
 									# Write paths to RequireJS
 									if rjsConfigFile
@@ -254,25 +260,31 @@ module.exports = (BasePlugin) ->
 
 										console.log "Warning: Renaming " + key + " to " + newKey
 
-									if not _.isArray(val)
-										# If path set in bower leads to a directory
-										# try to find file in it by ourselves..
-										if fs.statSync(val).isDirectory()
-											jsfiles = _.filter fs.readdirSync(val), (fileName) ->
-												return path.extname(fileName) is ".js" && fileName != 'Gruntfile.js'
+									# Don't bother with arrays, just take the first one
+									# If it's not the one we need, it can be specified
+									# in RequireJS configuration
+									if _.isArray(val)
+										obj[key] = obj[key][0]
+										val = obj[key]
 
-											# Find best match using levenshtein distance
-											# algorithm if there are many .js files
-											if jsfiles.length > 1
-												new levenshtein(jsfiles).find alias, (result) ->
-													obj[key] = path.join(val, result)
-											# Assign the only one that was found
-											else if jsfiles.length == 1
-												obj[key] = path.join(val, jsfiles[0])
+									# If path set in bower leads to a directory
+									# try to find file in it by ourselves..
+									if fs.statSync(val).isDirectory()
+										jsfiles = _.filter fs.readdirSync(val), (fileName) ->
+											return path.extname(fileName) is ".js" && fileName != 'Gruntfile.js'
 
-											# Ignore component if no .js file found
-											else
-												delete obj[key]
+										# Find best match using levenshtein distance
+										# algorithm if there are many .js files
+										if jsfiles.length > 1
+											new levenshtein(jsfiles).find alias, (result) ->
+												obj[key] = path.join(val, result)
+										# Assign the only one that was found
+										else if jsfiles.length == 1
+											obj[key] = path.join(val, jsfiles[0])
+
+										# Ignore component if no .js file found
+										else
+											delete obj[key]
 
 								# If alias can be found in bower components - send it's
 								# contents
