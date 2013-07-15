@@ -210,6 +210,10 @@ module.exports = (BasePlugin) ->
 											rjsConfig = require("transform").modifyConfig rjsConfigFile, (rconfig) ->
 												# Save files paths in file
 												if rjsCached is 0
+													# Normalize paths set in requirejs
+													_.each rconfig.paths, (val, key, obj) ->
+														if config.excludes.indexOf(key) is -1
+															obj[key] = path.join docpad.config.outPath, rconfig.baseUrl, val
 													# Merge Bower auto-detected paths with RequireJS paths
 													mergedPaths = _.extend components, rconfig.paths
 													fs.writeFileSync rjsCachePath, JSON.stringify(mergedPaths)

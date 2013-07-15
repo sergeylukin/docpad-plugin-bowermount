@@ -43,3 +43,7 @@ v2.3.0 July 14, 2013
 - Create PROXY for all paths mentioned in RequireJS configuration file, so if
   you set path for `abc` in your requirejs configuration file it will be
   mounted even if there is no such bower component installed
+
+v2.3.1 July 16, 2013
+- Normalize RequireJS relative paths to be relative to project's root instead
+  of rjs baseUrl
