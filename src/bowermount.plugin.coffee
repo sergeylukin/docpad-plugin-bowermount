@@ -29,7 +29,7 @@ module.exports = (BasePlugin) ->
 
 		# Fetch URL from the network
 		if /^http/.test componentPath
-			console.log 'bowermount: fetching ' + componentPath
+			# console.log 'bowermount: fetching ' + componentPath
 			request componentPath, (err, response, body) ->
 				if !err and response.statusCode == 200
 					res.writeHead(200, {"Content-Type": "text/javascript"});
@@ -40,7 +40,7 @@ module.exports = (BasePlugin) ->
 
 		# Serve file from FileSystem
 		else
-			console.log 'bowermount: loading ' + componentPath
+			# docpad.log 'info', 'bowermount: loading ' + componentPath
 			fs.exists componentPath, (exists) ->
 				if exists
 					res.writeHead(200, {"Content-Type": "text/javascript"});
@@ -62,221 +62,159 @@ module.exports = (BasePlugin) ->
 			environments:
 				development:
 					enabled: true
-			# list of bower components (like `jquery`, `almond`, etc.)
+			# list of bower components or RequireJS paths aliases
+			# (like `jquery`, `almond`, etc.)
 			# that shouldn't be mounted
 			excludes: []
 			# relative path to JS file with RequireJS paths configuration
-			# it's relative to "outPath" set in current environment
+			# it's relative to current environment's "outPath"
 			# so, for example, if running in development environment and 
 			# "outPath" is set to "./out" and JS file with RequireJS configuration
 			# is compiled into "./out/scripts/main.js" then the correct path would be
 			# "scripts/main.js"
 			rjsConfig: 'scripts/main.js'
-			requirejsPath: 'bower_components/requirejs/require.js'
+			# Change filename for paths map created and used by this plugin
+			mountMapPath: '.tmp.bowermount.json'
+
+		# When app is generated - go over all Bower components and RequireJS paths
+		# and create "Paths Map" file which is used to map future requests to
+		# unexisting files
+		generateAfter: ({server}) ->
+			# Prepare
+			docpad = @docpad
+			config = @config
+			# Fetch contents of RequireJS configuration file
+			rjsConfigFilePath = path.join docpad.config.outPath, config.rjsConfig
+			if fs.existsSync rjsConfigFilePath
+				rjsConfigFile = fs.readFileSync String(rjsConfigFilePath), 'utf8'
+
+			# Path to file that keeps "Paths Map"
+			mountMapPath = path.normalize docpad.config.outPath + config.mountMapPath
+
+			bower.commands.list({paths: true})
+				.on 'data', (components) ->
+
+					# Iterate through Bower components
+					_.each components, (componentPath, componentName, obj) ->
+
+						# Ignore this component
+						if config.excludes.indexOf(componentName) isnt -1
+							delete obj[componentName]
+							return
+
+						# Don't bother with arrays, just take the first one
+						# ..if it's not the one we need, it can be specified
+						# in RequireJS configuration
+						componentPath = obj[componentName] = obj[componentName][0] if _.isArray(componentPath)
+
+						# If path set in bower leads to a directory
+						# auto-detect the filename inside it
+						if fs.statSync(componentPath).isDirectory()
+							# First, fetch only JS files
+							jsfiles = _.filter fs.readdirSync(componentPath), (fileName) ->
+								return path.extname(fileName) is ".js" && fileName != 'Gruntfile.js'
+
+							# If there are more than 1 candidate - find best
+							# match using levenshtein distance
+							if jsfiles.length > 1
+								new levenshtein(jsfiles).find componentName, (res) ->
+									obj[componentName] = path.join(componentPath, res)
+							# If only one was found - most like that is the file we need
+							else if jsfiles.length == 1
+								obj[componentName] = path.join(componentPath, jsfiles[0])
+
+							# Ignore component if no .js file found
+							else
+								delete obj[componentName]
+
+					# Enter RequireJS configuration
+					if rjsConfigFile
+						requirejs.tools.useLib (require) ->
+							rjsConfig = require("transform").modifyConfig rjsConfigFile, (rconfig) ->
+								# Normalize paths set in requirejs
+								# So for example, ../../bower_components/... will be converted
+								# to full path
+								_.each rconfig.paths, (rjsModulePath, rjsModuleName, obj) ->
+									if config.excludes.indexOf(rjsModuleName) is -1
+										obj[rjsModuleName] = path.join docpad.config.outPath, rconfig.baseUrl, rjsModulePath
+								# Merge paths found in Bower with paths found in RequireJS
+								# into one JSON string and write to "Paths Map" file
+								mergedPaths = _.extend components, rconfig.paths
+								fs.writeFileSync mountMapPath, JSON.stringify(mergedPaths)
+
+								# Overwrite RequireJS configuration file so that
+								# it's paths will point to same pattern URI: /scripts/LIB_NAME
+								# for example jquery would point to /scripts/jquery.js
+								# underscore would point to /scripts/underscore.js etc.
+								_.each components, (rjsModulePath, rjsModuleName, obj) ->
+									# only if this component is not in "excludes" array
+									if config.excludes.indexOf(rjsModuleName) is -1
+										rconfig.paths[rjsModuleName] = rjsModuleName
+								_.each rconfig.paths, (rjsModulePath, rjsModuleName, obj) ->
+									# only if this component is not in "excludes" array
+									if config.excludes.indexOf(rjsModuleName) is -1
+										rconfig.paths[rjsModuleName] = rjsModuleName
+								# Return pathed RequireJS configuration file
+								rconfig
+
+							# Write new RequireJS configuration it's file
+							fs.writeFile rjsConfigFilePath, rjsConfig, (err) ->
+								docpad.log 'info', "Patched RequireJS paths to point to bowermount"
+					else
+						console.log 'Oops looks like RequireJS configuration file was not found'
+
+				.on 'error', (err) ->
+					console.log 'Oops could not fetch bower components'
 
 		# Server Extend
 		# Used to add our own custom routes to the server before the docpad routes are added
 		#
-		# Code below mounts bower components in the runtime
-		# So, for instance if your server is accessible via
-		# `http://localhost:9778/` and you have installed jquery:
-		# `bower install jquery`
-		# or almond:
-		# `bower install almond` then you would be able to access
-		# them via web via:
-		# `http://localhost:9778/scripts/jquery.js`
-		# and
-		# `http://localhost:9778/scripts/almond.js`
-		# 
-		# The code is highly based on `grunt-bower-requirejs` task:
-		# https://github.com/yeoman/grunt-bower-requirejs
+		# Code below extends server so that it can serve resources that are specified in
+		# "Paths Map" file if they don't exist
 		serverExtend: (opts) ->
 			# Prepare
 			{server} = opts
 			docpad = @docpad
 			config = @config
-			rjsConfigFilePath = path.join docpad.config.outPath, config.rjsConfig
-			rjsCached = 0
-			mergedPaths = undefined
+
+			# Path to file that keeps "Paths Map"
+			mountMapPath = path.normalize docpad.config.outPath + config.mountMapPath
 
 			# Start server middleware
 			server.use (req,res,next) ->
-				# Full path of file requested, like:
+				# Full path of requested file, like:
 				# "/var/www/app/out/scripts/zepto.js"
 				filePath = path.join docpad.config.outPath, req.url
 				# Just filename, like:
 				# "zepto.js"
 				fileName = path.basename filePath
 				# Alias - filename without extension
-				# alias is used to match requested file with
-				# bower component and with name of requirejs path
+				# alias is used when looking for path in "Paths Map" file
 				alias = fileName.replace /\.[^/.]+$/, ""
 
-				# Fetch contents of RequireJS configuration file
-				# Note: it's optional, if file is not found, we'll use
-				# auto-detection mechanism to resolve paths to bower components
-				# however if RequireJS configuration file exists
-				# then we will rely on what is specified in it's `paths` directive
-				if fs.existsSync rjsConfigFilePath
-					rjsConfigFile = fs.readFileSync String(rjsConfigFilePath), 'utf8'
-					rjsCachePath = path.normalize docpad.config.outPath + '/.rjs.cache'
-
-				# First of all, we want to know if requested file exists or not
-				# If it exists and it's not the file that contains RequireJS
-				# configuration - then just serve it "as is", however if it's the file
-				# with RequireJS configuration then we want to manipulate it:
-				#   - save it's `paths` directive somewhere for internal use. We'll
-				#   need it as a map to sources when serving mounted files
-				#   - set mounts relative paths instead of source paths. So if config
-				#   looks like so:
-				#     baseUrl: 'scripts/',
-				#     paths: {
-				#       'jquery': 'http://url/to/jquery',
-				#       'underscore': '/somewhere/in/my/system/underscore.js'
-				#     }
-				#   then change it to:
-				#     baseUrl: 'scripts/',
-				#     paths: {
-				#       'jquery': 'jquery',
-				#       'underscore': 'underscore'
-				#     }
-				#
-				#   assuming both jquery and underscore exist in the list of bower
-				#   installed components
-				#
-				#   so that jquery and underscore will be downloaded from
-				#   "scripts/jquery.js" and "scripts/underscore.js"
-				#
-				# Now if requested file doesn't exist - it's most likely the file we
-				# want to mount to it's source, would it be source we know from
-				# RequireJS configuration we saved earlier or auto-detection
-				#
 				fs.exists filePath, (exists) ->
-					# If any static existing file requested
+					# If any static existing file requested - just serve it
 					if exists
-						# If any file that is not RequireJS lib
-						if filePath == rjsConfigFilePath and rjsCached is 0
-							# go over all bower components and remove their paths in RequireJS
-							# remember paths in object which will be then used in resolving
-							bower.commands.list({paths: true})
-								.on 'data', (components) ->
+						next()
 
-									# remove excludes and clean up key names
-									_.each components, (val, key, obj) ->
-										if config.excludes.indexOf(key) isnt -1
-											delete obj[key]
-											return
-
-										# clean up path names like 'typeahead.js'
-										# when requirejs sees the .js extension it will assume
-										# an absolute path, which we don't want.
-										if path.extname(key) is ".js"
-											newKey = key.replace(/\.js$/, "")
-											obj[newKey] = obj[key]
-											delete obj[key]
-
-											console.log "Warning: Renaming " + key + " to " + newKey
-
-										# Don't bother with arrays, just take the first one
-										# If it's not the one we need, it can be specified
-										# in RequireJS configuration
-										if _.isArray(val)
-											obj[key] = obj[key][0]
-											val = obj[key]
-
-										# If path set in bower leads to a directory
-										# try to find file in it by ourselves..
-										if fs.statSync(val).isDirectory()
-											jsfiles = _.filter fs.readdirSync(val), (fileName) ->
-												return path.extname(fileName) is ".js" && fileName != 'Gruntfile.js'
-
-											# Find best match using levenshtein distance
-											# algorithm if there are many .js files
-											if jsfiles.length > 1
-												new levenshtein(jsfiles).find key, (res) ->
-													obj[key] = path.join(val, res)
-											# Assign the only one that was found
-											else if jsfiles.length == 1
-												obj[key] = path.join(val, jsfiles[0])
-
-											# Ignore component if no .js file found
-											else
-												delete obj[key]
-
-									# Write paths to RequireJS
-									if rjsConfigFile
-										# Use path set in RequireJS config
-										requirejs.tools.useLib (require) ->
-											rjsConfig = require("transform").modifyConfig rjsConfigFile, (rconfig) ->
-												# Save files paths in file
-												if rjsCached is 0
-													# Normalize paths set in requirejs
-													_.each rconfig.paths, (val, key, obj) ->
-														if config.excludes.indexOf(key) is -1
-															obj[key] = path.join docpad.config.outPath, rconfig.baseUrl, val
-													# Merge Bower auto-detected paths with RequireJS paths
-													mergedPaths = _.extend components, rconfig.paths
-													fs.writeFileSync rjsCachePath, JSON.stringify(mergedPaths)
-													rjsCached = 1
-												# Change RequireJS paths
-												# so that jquery would be jquery
-												# underscore would be underscore etc.
-												_.each components, (val, key, obj) ->
-													# only if this component is not in "excludes" array
-													if config.excludes.indexOf(key) is -1
-														rconfig.paths[key] = key
-												_.each rconfig.paths, (val, key, obj) ->
-													# only if this component is not in "excludes" array
-													if config.excludes.indexOf(key) is -1
-														rconfig.paths[key] = key
-												rconfig
-
-											# Update file with RequireJS configuration
-											fs.writeFile rjsConfigFilePath, rjsConfig, (err) ->
-												console.log "Updated RequireJS config"
-												# Serve RequireJS file from FileSystem
-												res.writeHead(200, {"Content-Type": "text/javascript"});
-												res.write fs.readFileSync rjsConfigFilePath
-												res.end()
-									else
-										next()
-
-								.on 'error', (err) ->
-									next?(err)
-
-						# If any other existing file was requested
-						else
-							next()
-
-					# If RequireJS config file requested
-					else if fileName == 'requirejs.js'
-						requirejsPath = path.join docpad.config.rootPath, config.requirejsPath
-						fs.exists requirejsPath, (exists) ->
-							if exists
-								# Serve RequireJS file from FileSystem
-								res.writeHead(200, {"Content-Type": "text/javascript"});
-								res.write fs.readFileSync requirejsPath
-								res.end()
-							else
-								next()
-
-					# If a script requested - check whether special route is
-					# assigned to it and mount it if needed
-					# Catch URIs like: "/scripts/something.js"
+					# If file doesn't exist but it matches our scripts pattern and is
+					# found in "Paths Map" file - then serve it's path
+					#
+					# Scripts pattern is: "/scripts/something.js"
 					# but not "/scripts/something"
 					# and not "/scripts/subdir/something.js"
 					else if /\/scripts\/[^\/]*\.js$/.test req.url
-						# Read from cache file
-						if fs.existsSync rjsCachePath
-							pathsCache = JSON.parse fs.readFileSync(rjsCachePath)
-							# If file map exists
-							if pathsCache[alias]
-								# Absolute path with extension
-								if /^[\/|http]/.test pathsCache[alias]
-									componentPath = pathsCache[alias]
-								# Relative path (to project root) without extension
+						# Read "Paths Map" file
+						if fs.existsSync mountMapPath
+							pathsMap = JSON.parse fs.readFileSync(mountMapPath)
+							# If file's path exists in paths map
+							if pathsMap[alias]
+								# Serve absolute and http paths 'as is'
+								if /^[\/|http]/.test pathsMap[alias]
+									componentPath = pathsMap[alias]
+								# Normalize relative paths
 								else
-									componentPath = path.join docpad.config.rootPath, pathsCache[alias]
+									componentPath = path.join docpad.config.rootPath, pathsMap[alias]
 
 								serveComponent componentPath, res, next
 							else
@@ -284,6 +222,6 @@ module.exports = (BasePlugin) ->
 						else
 							next()
 
-					# File neither exists, neither seems to be bower js component
+					# File neither exists, neither seems to match any valid pattern
 					else
 						next()

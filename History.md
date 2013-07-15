@@ -47,3 +47,10 @@ v2.3.0 July 14, 2013
 v2.3.1 July 16, 2013
 - Normalize RequireJS relative paths to be relative to project's root instead
   of rjs baseUrl
+
+v2.4.0 July 16, 2013
+- Changed the logic behind the scenes. Instead of highly relying on
+  `serverExtend` event, utilizing `generateAfter` event more heavy lifting
+- Refactored the whole codebase & renamed many variables in order for code to be
+  more self-explanatory
+- Rewritten comments in code accordingly to last changes
