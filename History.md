@@ -37,3 +37,9 @@ v2.2.4 July 11, 2013
 
 v2.2.5 July 14, 2013
 - Fix reading bower components with more than 1 main file
+
+v2.3.0 July 14, 2013
+- Relying on RequireJS configuration - fallback may be provided in future
+- Create PROXY for all paths mentioned in RequireJS configuration file, so if
+  you set path for `abc` in your requirejs configuration file it will be
+  mounted even if there is no such bower component installed
