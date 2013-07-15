@@ -44,7 +44,6 @@ environments:
     plugins:
       bowermount:
         rjsConfig: 'path/to/my/requirejs/config'
-        requirejsPath: 'relative/path/to/my/requirejs.js'
 ```
 
 

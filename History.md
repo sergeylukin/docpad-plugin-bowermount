@@ -54,3 +54,6 @@ v2.4.0 July 16, 2013
 - Refactored the whole codebase & renamed many variables in order for code to be
   more self-explanatory
 - Rewritten comments in code accordingly to last changes
+
+v2.4.1 July 16, 2013
+- Fix path resolution for bowermount paths map file

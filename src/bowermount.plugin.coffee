@@ -89,7 +89,7 @@ module.exports = (BasePlugin) ->
 				rjsConfigFile = fs.readFileSync String(rjsConfigFilePath), 'utf8'
 
 			# Path to file that keeps "Paths Map"
-			mountMapPath = path.normalize docpad.config.outPath + config.mountMapPath
+			mountMapPath = path.join docpad.config.outPath, config.mountMapPath
 
 			bower.commands.list({paths: true})
 				.on 'data', (components) ->
@@ -178,7 +178,7 @@ module.exports = (BasePlugin) ->
 			config = @config
 
 			# Path to file that keeps "Paths Map"
-			mountMapPath = path.normalize docpad.config.outPath + config.mountMapPath
+			mountMapPath = path.join docpad.config.outPath, config.mountMapPath
 
 			# Start server middleware
 			server.use (req,res,next) ->
