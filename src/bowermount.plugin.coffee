@@ -177,6 +177,7 @@ module.exports = (BasePlugin) ->
 			docpad = @docpad
 			config = @config
 
+			rjsConfigFilePath = path.join docpad.config.outPath, config.rjsConfig
 			# Path to file that keeps "Paths Map"
 			mountMapPath = path.join docpad.config.outPath, config.mountMapPath
 
@@ -192,20 +193,18 @@ module.exports = (BasePlugin) ->
 				# alias is used when looking for path in "Paths Map" file
 				alias = fileName.replace /\.[^/.]+$/, ""
 
-				fs.exists filePath, (exists) ->
-					# If any static existing file requested - just serve it
-					if exists
-						next()
-
-					# If file doesn't exist but it matches our scripts pattern and is
-					# found in "Paths Map" file - then serve it's path
-					#
-					# Scripts pattern is: "/scripts/something.js"
-					# but not "/scripts/something"
-					# and not "/scripts/subdir/something.js"
-					else if /\/scripts\/[^\/]*\.js$/.test req.url
+				# If file doesn't exist but it matches our scripts pattern and is
+				# found in "Paths Map" file - then serve it's path
+				#
+				# Scripts pattern is: "/scripts/something.js"
+				# but not "/scripts/something"
+				# and not "/scripts/subdir/something.js"
+				if /\/scripts\/[^\/]*\.js$/.test req.url
+					fs.exists filePath, (exists) ->
+						if exists
+							serveComponent filePath, res, next
 						# Read "Paths Map" file
-						if fs.existsSync mountMapPath
+						else if fs.existsSync mountMapPath
 							pathsMap = JSON.parse fs.readFileSync(mountMapPath)
 							# If file's path exists in paths map
 							if pathsMap[alias]
@@ -222,6 +221,5 @@ module.exports = (BasePlugin) ->
 						else
 							next()
 
-					# File neither exists, neither seems to match any valid pattern
-					else
-						next()
+				else
+					next()

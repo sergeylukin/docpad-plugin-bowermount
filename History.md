@@ -57,3 +57,6 @@ v2.4.0 July 16, 2013
 
 v2.4.1 July 16, 2013
 - Fix path resolution for bowermount paths map file
+
+v2.4.2 July 19, 2013
+- Fix serving existing javascript files
