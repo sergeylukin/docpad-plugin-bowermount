@@ -161,7 +161,7 @@ module.exports = (BasePlugin) ->
 							fs.writeFile rjsConfigFilePath, rjsConfig, (err) ->
 								docpad.log 'info', "Patched RequireJS paths to point to bowermount"
 					else
-						console.log 'Oops looks like RequireJS configuration file was not found'
+						fs.writeFileSync mountMapPath, JSON.stringify(components)
 
 				.on 'error', (err) ->
 					console.log 'Oops could not fetch bower components'

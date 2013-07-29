@@ -60,3 +60,6 @@ v2.4.1 July 16, 2013
 
 v2.4.2 July 19, 2013
 - Fix serving existing javascript files
+
+v2.4.3 July 30, 2013
+- Drop dependency on RequireJS
