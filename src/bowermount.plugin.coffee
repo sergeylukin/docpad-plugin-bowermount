@@ -146,10 +146,6 @@ module.exports = (BasePlugin) ->
 								# it's paths will point to same pattern URI: /scripts/LIB_NAME
 								# for example jquery would point to /scripts/jquery.js
 								# underscore would point to /scripts/underscore.js etc.
-								_.each components, (rjsModulePath, rjsModuleName, obj) ->
-									# only if this component is not in "excludes" array
-									if config.excludes.indexOf(rjsModuleName) is -1
-										rconfig.paths[rjsModuleName] = rjsModuleName
 								_.each rconfig.paths, (rjsModulePath, rjsModuleName, obj) ->
 									# only if this component is not in "excludes" array
 									if config.excludes.indexOf(rjsModuleName) is -1
