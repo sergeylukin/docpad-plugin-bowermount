@@ -1,10 +1,15 @@
 # bower-mount Plugin for [DocPad](http://docpad.org)
+
 DocPad plugin that auto-mounts bower components and all files specified in
 RequireJS `paths` property in web server middleware (currently
 only JS components). Best fits for development environment. Assumes that in
 production environment JS files are bundled in static files.
 
 It's enabled only in development environment by default
+
+It runs only when docpad initially generates project files. So, if new
+bower components are added or new requirejs modules paths are specified
+in in `paths` directive, it's recommended to rerun docpad instance.
 
 RequireJS and Bower configurations are a requirement
 

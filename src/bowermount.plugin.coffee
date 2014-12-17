@@ -79,7 +79,14 @@ module.exports = (BasePlugin) ->
 		# When app is generated - go over all Bower components and RequireJS paths
 		# and create "Paths Map" file which is used to map future requests to
 		# unexisting files
-		generateAfter: ({server}) ->
+    #
+    # Notice: we use "generated" event because we don't want to run this
+    # task every time a small change was applied to project files
+    # but rather only when docpad server performs initial generation
+    # So, if developer adds fresh bower components or custom module path to
+    # their requirejs configuration, it's required to rerun the docpad server
+    # which is not a big deal for this not-so-often situation
+		generated: ({server}) ->
 			# Prepare
 			docpad = @docpad
 			config = @config
